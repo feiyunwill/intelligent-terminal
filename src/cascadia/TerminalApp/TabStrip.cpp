@@ -7,6 +7,7 @@
 #include "TabStrip.h"
 #include "AgentIconUtils.h"
 #include "TabStripAutomationPeer.h"
+#include "..\RichTabProvider\ProviderBroker.h"
 #include "TabHeaderControl.h"
 #include "Utils.h"
 
@@ -487,6 +488,10 @@ namespace winrt::TerminalApp::implementation
                 self->_setSearchPanelExpanded(false, false);
             }
         });
+        if constexpr (Feature_RichTabProviders::IsEnabled())
+        {
+            _richTabGitAvailable = ::Microsoft::Terminal::RichTab::Provider::ProviderBroker::Instance().GitAvailable();
+        }
         _applyRailState();
         _updateRichTabMetadataSelectionState();
     }
@@ -1462,7 +1467,7 @@ namespace winrt::TerminalApp::implementation
 
     void TabStrip::RichTabRepositoryVisible(bool value)
     {
-        if (value && !_richTabRepositoryVisible && _richTabMetadataSelectionCount() >= 2)
+        if (value && (!_richTabGitAvailable || (!_richTabRepositoryVisible && _richTabMetadataSelectionCount() >= 2)))
         {
             RichTabRepositoryVisibleItem().IsChecked(false);
             return;
@@ -1474,7 +1479,7 @@ namespace winrt::TerminalApp::implementation
 
     void TabStrip::RichTabBranchVisible(bool value)
     {
-        if (value && !_richTabBranchVisible && _richTabMetadataSelectionCount() >= 2)
+        if (value && (!_richTabGitAvailable || (!_richTabBranchVisible && _richTabMetadataSelectionCount() >= 2)))
         {
             RichTabBranchVisibleItem().IsChecked(false);
             return;
@@ -1510,7 +1515,7 @@ namespace winrt::TerminalApp::implementation
 
     void TabStrip::RichTabChangesVisible(bool value)
     {
-        if (value && !_richTabChangesVisible && _richTabMetadataSelectionCount() >= 2)
+        if (value && (!_richTabGitAvailable || (!_richTabChangesVisible && _richTabMetadataSelectionCount() >= 2)))
         {
             RichTabChangesVisibleItem().IsChecked(false);
             return;
@@ -1543,6 +1548,38 @@ namespace winrt::TerminalApp::implementation
         }
     }
 
+    void TabStrip::RichTabGitAvailable(bool value)
+    {
+        if (_richTabGitAvailable != value)
+        {
+            _richTabGitAvailable = value;
+            bool changedVisibility = false;
+            if (!value)
+            {
+                if (_richTabRepositoryVisible)
+                {
+                    RichTabRepositoryVisible(false);
+                    changedVisibility = true;
+                }
+                if (_richTabBranchVisible)
+                {
+                    RichTabBranchVisible(false);
+                    changedVisibility = true;
+                }
+                if (_richTabChangesVisible)
+                {
+                    RichTabChangesVisible(false);
+                    changedVisibility = true;
+                }
+            }
+            _updateRichTabMetadataSelectionState();
+            if (changedVisibility)
+            {
+                VisibleFieldsChanged.raise(*this, nullptr);
+            }
+        }
+    }
+
     uint32_t TabStrip::_richTabMetadataSelectionCount() const noexcept
     {
         return static_cast<uint32_t>(_richTabAgentStatusVisible) +
@@ -1558,9 +1595,9 @@ namespace winrt::TerminalApp::implementation
 
         RichTabAgentStatusVisibleItem().IsEnabled(_richTabAgentStatusVisible || canSelectAnother);
         RichTabWorkingDirectoryVisibleItem().IsEnabled(_richTabWorkingDirectoryVisible || canSelectAnother);
-        RichTabRepositoryVisibleItem().IsEnabled(_richTabRepositoryVisible || canSelectAnother);
-        RichTabBranchVisibleItem().IsEnabled(_richTabBranchVisible || canSelectAnother);
-        RichTabChangesVisibleItem().IsEnabled(_richTabChangesVisible || canSelectAnother);
+        RichTabRepositoryVisibleItem().IsEnabled(_richTabGitAvailable && (_richTabRepositoryVisible || canSelectAnother));
+        RichTabBranchVisibleItem().IsEnabled(_richTabGitAvailable && (_richTabBranchVisible || canSelectAnother));
+        RichTabChangesVisibleItem().IsEnabled(_richTabGitAvailable && (_richTabChangesVisible || canSelectAnother));
     }
 
     UIElement TabStrip::TopChromeContent()

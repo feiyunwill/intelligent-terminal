@@ -323,6 +323,8 @@ namespace winrt::TerminalApp::implementation
         void RichTabWorkingDirectoryVisible(bool value);
         bool RichTabChangesVisible() const noexcept { return _richTabChangesVisible; }
         void RichTabChangesVisible(bool value);
+        bool RichTabGitAvailable() const noexcept { return _richTabGitAvailable; }
+        void RichTabGitAvailable(bool value);
         void RichTabMetadataControlsVisible(bool value);
 
         winrt::Windows::UI::Xaml::UIElement TopChromeContent();
@@ -478,6 +480,7 @@ namespace winrt::TerminalApp::implementation
         bool _richTabAgentStatusVisible{ true };
         bool _richTabWorkingDirectoryVisible{ true };
         bool _richTabChangesVisible{ false };
+        bool _richTabGitAvailable{ true };
         bool _richTabMetadataControlsVisible{ true };
         winrt::Windows::Foundation::Collections::IObservableVector<winrt::Windows::Foundation::IInspectable> _tabItems{ nullptr };
         winrt::Windows::Foundation::Collections::IObservableVector<TerminalApp::TabStripDisplayItem> _displayItems{ nullptr };

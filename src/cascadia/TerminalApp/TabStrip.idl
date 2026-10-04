@@ -205,5 +205,6 @@ namespace TerminalApp
         Boolean RichTabChangesVisible;
         Boolean RichTabWorkingDirectoryVisible;
         event Windows.Foundation.TypedEventHandler<TabStrip, Object> VisibleFieldsChanged;
+        Boolean RichTabGitAvailable;
     };
 }
